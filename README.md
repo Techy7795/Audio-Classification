@@ -2,7 +2,7 @@
 **Baby Cry Classification Using Deep Learning**
 This project aims to classify audio recordings to determine whether a baby is crying or not. Using deep learning techniques, the model can effectively identify crying sounds amidst various background noises.
 
-<div align="center">**Project Overview**<br/>
+<div align="center"><h3>Project Overview</h3><br/>
 </div>
 **Dataset**: Audio samples of baby cries ,noise, laugh, silence.<br/>
 **Preprocessing**: Applied noise reduction and normalization to improve audio quality.<br/>
