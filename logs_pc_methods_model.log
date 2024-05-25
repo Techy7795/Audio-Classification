@@ -1,0 +1,7 @@
+2024-03-18 12:42:40 PM - INFO - Calling TrainClassifier
+2024-03-18 12:42:40 PM - INFO - Splitting train and test set. Test set size: 0.25%
+2024-03-18 12:42:40 PM - INFO - Train set size: 324. Test set size: 108
+2024-03-18 12:42:40 PM - INFO - Training model...
+2024-03-18 12:43:23 PM - INFO - Time taken: 42.942581
+2024-03-18 12:43:23 PM - INFO - {'accuracy': 0.9629629629629629, 'recall': 0.962962962962963, 'precision': 0.9660714285714286, 'f1': 0.9622966507177034}
+2024-03-18 12:43:23 PM - INFO - Saving model...

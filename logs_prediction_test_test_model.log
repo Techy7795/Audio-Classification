@@ -1,0 +1,8 @@
+2024-03-18 12:54:02 PM - INFO - Reading WAV1.wav
+2024-03-18 12:54:03 PM - INFO - Time taken for reading file: 1.2240494
+2024-03-18 12:54:03 PM - INFO - Starting feature engineering
+2024-03-18 12:54:03 PM - INFO - Time taken for feature engineering: 0.3694166000000001
+2024-03-18 12:54:03 PM - INFO - Predicting...
+2024-03-18 12:54:03 PM - INFO - Time taken for prediction: 0.0020705999999997005. Is it a baby cry?? 0
+2024-03-18 12:54:03 PM - INFO - Saving prediction...
+2024-03-18 12:54:03 PM - INFO - Saved! C:\Users\user\baby_cry_detection\output\prediction\prediction.txt
