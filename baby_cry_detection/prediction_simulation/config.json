@@ -1,7 +1,0 @@
-{
-    "duration": 10,
-    "record_interval": 5,
-    "model_path": "C:\\Users\\user\\baby_cry_detection\\output\\model\\model.pkl",
-    "output_path": "C:\\Users\\user\\baby_cry_detection\\output\\prediction",
-    "log_path": "C:\\Users\\user\baby_cry_detection\\logs_prediction_test_test_model.log"
-}
