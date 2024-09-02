@@ -1,114 +1,96 @@
-# -*- coding: utf-8 -*-
-
+import os
+import time
 import argparse
 import logging
-import os
 import pickle
-import timeit
 import warnings
+from baby_cry_detection.pc_methods.feature_engineer import FeatureEngineer
+from baby_cry_detection.pc_methods.majority_voter import MajorityVoter
+from baby_cry_detection.pc_methods.baby_cry_predictor import BabyCryPredictor
+import librosa
+import sounddevice as sd
+import soundfile as sf
 
-from baby_cry_detection.rpi_methods import Reader
-from baby_cry_detection.rpi_methods.feature_engineer import FeatureEngineer
-from baby_cry_detection.rpi_methods.majority_voter import MajorityVoter
+def record_audio(file_path, duration, output_path, samplerate=44100, channels=2):
+    print("Recording...")
+    recording = sd.rec(int(duration * samplerate), samplerate=samplerate, channels=channels, dtype='int16')
+    sd.wait()
+    sf.write(file_path, recording, samplerate)
+    print("Recording saved:", file_path)
 
-from baby_cry_detection.rpi_methods.baby_cry_predictor import BabyCryPredictor
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--load_path_data',
-                        default=os.path.dirname(os.path.abspath(__file__)))
-    parser.add_argument('--load_path_model',
-                        default='{}/../../../baby_cry_detection/output/model/'.format(os.path.dirname(os.path.abspath(__file__))))
-    parser.add_argument('--save_path',
-                        default='{}/../../../baby_cry_detection/output/prediction/'.format(os.path.dirname(os.path.abspath(__file__))))
-    parser.add_argument('--file_name', default='WAV1.wav')
-    parser.add_argument('--log_path',
-                        default='{}/../../'.format(os.path.dirname(os.path.abspath(__file__))))
-
-    # Arguments
-    args = parser.parse_args()
-    load_path_data = os.path.normpath(args.load_path_data)
-    load_path_model = os.path.normpath(args.load_path_model)
-    file_name = args.file_name
-    save_path = os.path.normpath(args.save_path)
-    log_path = os.path.normpath(args.log_path)
-
-     # Set up logging
+def predict_and_play(file_path, model_path, output_path, log_path):
+    # Set up logging
     logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s',
                         datefmt='%Y-%m-%d %I:%M:%S %p',
-                        filename=os.path.join(log_path, 'logs_prediction_test_test_model.log'),
+                        filename=os.path.join(log_path, 'audio_prediction.log'),
                         filemode='w',
                         level=logging.INFO)
 
-    # READ RAW SIGNAL
+    logging.info('Predicting...')
 
-    logging.info('Reading {0}'.format(file_name))
-    start = timeit.default_timer()
-
-    # Read signal (first 5 sec)
-    file_reader = Reader(os.path.join(load_path_data, file_name))
-
-    play_list = file_reader.read_audio_file()
-
-    stop = timeit.default_timer()
-    logging.info('Time taken for reading file: {0}'.format(stop - start))
+    # Load audio data
+    audio_data = librosa.load(file_path, sr=None)
 
     # FEATURE ENGINEERING
-
-    logging.info('Starting feature engineering')
-    start = timeit.default_timer()
-
-    # Feature extraction
     engineer = FeatureEngineer()
 
-    play_list_processed = list()
-
-    for signal in play_list:
-        tmp = engineer.feature_engineer(signal)
-        play_list_processed.append(tmp)
-
-    stop = timeit.default_timer()
-    logging.info('Time taken for feature engineering: {0}'.format(stop - start))
+    # Process the audio data
+    signal = engineer.feature_engineer(audio_data)
 
     # MAKE PREDICTION
-
-    logging.info('Predicting...')
-    start = timeit.default_timer()
-
-    # https://stackoverflow.com/questions/41146759/check-sklearn-version-before-loading-model-using-joblib
     with warnings.catch_warnings():
-      warnings.simplefilter("ignore", category=UserWarning)
+        warnings.simplefilter("ignore", category=UserWarning)
 
-      with open((os.path.join(load_path_model, 'model.pkl')), 'rb') as fp:
-          model = pickle.load(fp)
+        with open(model_path, 'rb') as fp:
+            model = pickle.load(fp)
 
     predictor = BabyCryPredictor(model)
+    prediction = predictor.classify(signal)
 
-    predictions = list()
+    logging.info('Prediction: {}'.format(prediction))
 
-    for signal in play_list_processed:
-        tmp = predictor.classify(signal)
-        predictions.append(tmp)
+    # Check if the prediction indicates a baby cry
+    if prediction == "baby_cry":
+        print("Baby crying detected! Playing soothing song...")
+        # Play soothing song
+        if os.name == 'nt':  # Windows
+            os.system(f'start /min wmplayer "{johnny.mp3}"')
+        # elif os.name == 'posix':  # macOS/Linux
+        #     os.system(f'open "{song_path}"')  # macOS
+        #     # or
+        #     # os.system(f'xdg-open "{song_path}"')  # Linux
+    else:
+        print("No baby crying detected.")
 
-    # MAJORITY VOTE
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--duration', type=int, default=5, help='Duration of each audio clip in seconds')
+    parser.add_argument('--record_interval', type=int, default=10, help='Interval between recordings in seconds')
+    parser.add_argument('--model_path', required=True, help='Path to the trained model')
+    parser.add_argument('--output_path', default='./recordings', help='Path to save the recorded audio clips')
+    parser.add_argument('--log_path', default='./logs', help='Path to save the log files')
 
-    majority_voter = MajorityVoter(predictions)
-    majority_vote = majority_voter.vote()
+    args = parser.parse_args()
 
-    stop = timeit.default_timer()
-    logging.info('Time taken for prediction: {0}. Is it a baby cry?? {1}'.format(stop - start, majority_vote))
+    if not os.path.exists(args.output_path):
+        os.makedirs(args.output_path)
 
-    # SAVE
+    if not os.path.exists(args.log_path):
+        os.makedirs(args.log_path)
 
-    logging.info('Saving prediction...')
+    while True:
+        # Generate a unique file name based on timestamp
+        timestamp = int(time.time())
+        file_path = os.path.join(args.output_path, f"recording_{timestamp}.wav")
 
-    # Save prediction result
-    with open(os.path.join(save_path, 'prediction.txt'), 'w') as text_file:
-        
-        text_file.write("{}".format(majority_vote))
-    logging.info('Saved! {}'.format(os.path.join(save_path, 'prediction.txt')))
+        # Record audio
+        record_audio(file_path, args.duration, args.output_path)
 
+        # Predict and play if baby crying detected
+        predict_and_play(file_path, args.model_path, args.output_path, args.log_path)
+
+        # Wait for the next recording interval
+        time.sleep(args.record_interval)
 
 if __name__ == '__main__':
     main()
