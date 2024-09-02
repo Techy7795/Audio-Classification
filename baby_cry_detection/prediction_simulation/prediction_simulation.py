@@ -5,7 +5,6 @@ import logging
 import pickle
 import warnings
 from baby_cry_detection.pc_methods.feature_engineer import FeatureEngineer
-from baby_cry_detection.pc_methods.majority_voter import MajorityVoter
 from baby_cry_detection.pc_methods.baby_cry_predictor import BabyCryPredictor
 import librosa
 import sounddevice as sd
